@@ -170,13 +170,15 @@ onmessage = (e) => {
       try {
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const total = +res.headers.get("content-length") || 0, reader = res.body.getReader(), parts = []; let got = 0;
+        const reader = res.body.getReader(), parts = []; let got = 0;
         for (;;) {
           const { done, value } = await reader.read(); if (done) break;
           parts.push(value); got += value.length;
-          this.overlay.textContent = total ? `Loading scene… ${Math.round((100 * got) / total)}%` : `Loading scene… ${(got / 1e6).toFixed(1)} MB`;
+          this.overlay.textContent = `Loading scene… ${(got / 1e6).toFixed(1)} MB`;
         }
         const buf = new Uint8Array(got); let off = 0; for (const p of parts) { buf.set(p, off); off += p.length; }
+        this.overlay.textContent = "Preparing scene…";
+        await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
         this.setScene(parseScene(buf.buffer));
         this.overlay.hidden = true;
       } catch (err) {
@@ -188,18 +190,19 @@ onmessage = (e) => {
       const gl = this.gl, n = s.n, W = 2048, H = Math.ceil((2 * n) / W);
       this.scene = s; this.iso = 0; this.camIdx = 0;
       const td = new Uint32Array(W * H * 4), tf = new Float32Array(td.buffer);
+      const P = s.pos, S = s.scale, Q = s.rot;
       for (let i = 0; i < n; i++) {
-        tf[8 * i] = s.pos[3 * i]; tf[8 * i + 1] = s.pos[3 * i + 1]; tf[8 * i + 2] = s.pos[3 * i + 2];
-        const r = [0, 1, 2, 3].map((k) => (s.rot[4 * i + k] - 128) / 128), sc = [s.scale[3 * i], s.scale[3 * i + 1], s.scale[3 * i + 2]];
-        const M = [1 - 2 * (r[2] * r[2] + r[3] * r[3]), 2 * (r[1] * r[2] + r[0] * r[3]), 2 * (r[1] * r[3] - r[0] * r[2]),
-                   2 * (r[1] * r[2] - r[0] * r[3]), 1 - 2 * (r[1] * r[1] + r[3] * r[3]), 2 * (r[2] * r[3] + r[0] * r[1]),
-                   2 * (r[1] * r[3] + r[0] * r[2]), 2 * (r[2] * r[3] - r[0] * r[1]), 1 - 2 * (r[1] * r[1] + r[2] * r[2])]
-                   .map((k, j) => k * sc[Math.floor(j / 3)]);
-        const sg = [M[0] * M[0] + M[3] * M[3] + M[6] * M[6], M[0] * M[1] + M[3] * M[4] + M[6] * M[7], M[0] * M[2] + M[3] * M[5] + M[6] * M[8],
-                    M[1] * M[1] + M[4] * M[4] + M[7] * M[7], M[1] * M[2] + M[4] * M[5] + M[7] * M[8], M[2] * M[2] + M[5] * M[5] + M[8] * M[8]];
-        td[8 * i + 4] = toHalf(4 * sg[0]) | (toHalf(4 * sg[1]) << 16);
-        td[8 * i + 5] = toHalf(4 * sg[2]) | (toHalf(4 * sg[3]) << 16);
-        td[8 * i + 6] = toHalf(4 * sg[4]) | (toHalf(4 * sg[5]) << 16);
+        const o = 8 * i;
+        tf[o] = P[3 * i]; tf[o + 1] = P[3 * i + 1]; tf[o + 2] = P[3 * i + 2];
+        const w = (Q[4 * i] - 128) / 128, x = (Q[4 * i + 1] - 128) / 128, y = (Q[4 * i + 2] - 128) / 128, z = (Q[4 * i + 3] - 128) / 128;
+        const s0 = S[3 * i], s1 = S[3 * i + 1], s2 = S[3 * i + 2];
+        // M = R(q) diag(s), stored column-wise as in the 3DGS reference; Sigma = M M^T
+        const m0 = (1 - 2 * (y * y + z * z)) * s0, m1 = 2 * (x * y + w * z) * s0, m2 = 2 * (x * z - w * y) * s0;
+        const m3 = 2 * (x * y - w * z) * s1, m4 = (1 - 2 * (x * x + z * z)) * s1, m5 = 2 * (y * z + w * x) * s1;
+        const m6 = 2 * (x * z + w * y) * s2, m7 = 2 * (y * z - w * x) * s2, m8 = (1 - 2 * (x * x + y * y)) * s2;
+        td[o + 4] = toHalf(4 * (m0 * m0 + m3 * m3 + m6 * m6)) | (toHalf(4 * (m0 * m1 + m3 * m4 + m6 * m7)) << 16);
+        td[o + 5] = toHalf(4 * (m0 * m2 + m3 * m5 + m6 * m8)) | (toHalf(4 * (m1 * m1 + m4 * m4 + m7 * m7)) << 16);
+        td[o + 6] = toHalf(4 * (m1 * m2 + m4 * m5 + m7 * m8)) | (toHalf(4 * (m2 * m2 + m5 * m5 + m8 * m8)) << 16);
       }
       this.td = td; this.texW = W; this.texH = H;
       this.palette = new Uint32Array(s.head.n_labels + 1);
@@ -368,6 +371,12 @@ onmessage = (e) => {
     tau.oninput = () => { v.tau = +tau.value; tauOut.textContent = (+tau.value).toFixed(2); v.refresh(); };
     root.querySelector("[data-nextview]").onclick = () => { if (v.scene) { v.camIdx = (v.camIdx + 1) % v.scene.head.cameras.length; v.setCamera(v.camIdx); } };
     press(sceneBtns, sceneBtns[0]); press(modeBtns, modeBtns.find((b) => b.dataset.mode === v.mode));
-    v.load(sceneBtns[0].dataset.scene);
+    v.overlay.textContent = "The scene loads when you scroll here.";
+    let started = false;
+    const start = () => { if (!started) { started = true; v.load(sceneBtns[0].dataset.scene); } };
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); start(); } }, { rootMargin: "300px" });
+      io.observe(root);
+    } else start();
   });
 })();
