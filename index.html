@@ -2,227 +2,162 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="description" content="OP2GS: Object-Aware 3D Gaussian Primitives via Dual Opacity">
-  <meta name="keywords" content="OP2GS, 3D Gaussian Splatting, Open-Vocabulary Segmentation, Dual Opacity">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>OP2GS: Object-Aware 3D Gaussian Primitives via Dual Opacity</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="OP2GS: feature-free Gaussian splatting with dual opacity for 3D instance segmentation. Each Gaussian stores one instance label and one instance opacity.">
+  <meta name="keywords" content="OP2GS, 3D Gaussian Splatting, 3D instance segmentation, dual opacity, instance opacity">
+  <title>OP2GS</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Noto+Sans:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="static/css/index.css">
+  <script src="static/js/op2gs_viewer.js" defer></script>
 </head>
 <body>
   <section class="hero publication-hero">
     <div class="hero-body">
-      <div class="container is-max-desktop">
-        <div class="columns is-centered">
-          <div class="column has-text-centered">
-            <p class="publication-badge">arXiv preprint</p>
-            <h1 class="title publication-title">OP2GS: Object-Aware 3D Gaussian Primitives via Dual Opacity</h1>
-            <p class="publication-subtitle">Compact and efficient open-vocabulary 3D segmentation with dual-opacity Gaussian primitives.</p>
+      <div class="container is-max-desktop has-text-centered">
+        <p class="publication-badge">arXiv preprint</p>
+        <h1 class="title publication-title">OP2GS: Feature-Free Gaussian Splatting with Dual Opacity for 3D Instance Segmentation</h1>
 
-            <div class="publication-authors">
-              <span class="author-block">Guiyu Liu<sup>1</sup></span>
-              <span class="author-block">Niklas Vaara<sup>1</sup></span>
-              <span class="author-block">Janne Mustaniemi<sup>1</sup></span>
-              <span class="author-block">Juho Kannala<sup>1,2</sup></span>
-              <span class="author-block">Janne Heikkila<sup>1</sup></span>
-            </div>
+        <div class="publication-authors">
+          <span class="author-block">Guiyu Liu<sup>1</sup></span>
+          <span class="author-block">Niklas Vaara<sup>1</sup></span>
+          <span class="author-block">Janne Mustaniemi<sup>1</sup></span>
+          <span class="author-block">Juho Kannala<sup>1,2</sup></span>
+          <span class="author-block">Janne Heikkilä<sup>1</sup></span>
+        </div>
+        <div class="publication-authors publication-affiliations">
+          <span class="author-block"><sup>1</sup>Center for Machine Vision and Signal Analysis, University of Oulu</span>
+          <span class="author-block"><sup>2</sup>Aalto University</span>
+        </div>
 
-            <div class="publication-authors publication-affiliations">
-              <span class="author-block"><sup>1</sup>University of Oulu</span>
-              <span class="author-block"><sup>2</sup>Aalto University</span>
-            </div>
-
-            <div class="publication-links">
-              <a href="static/pdf/op2gs.pdf" class="external-link button is-dark">
-                <span class="icon">PDF</span>
-              </a>
-              <a href="#" class="external-link button is-dark is-disabled" aria-disabled="true">
-                <span class="icon">arXiv TBD</span>
-              </a>
-              <a href="#" class="external-link button is-dark is-disabled" aria-disabled="true">
-                <span class="icon">Code TBD</span>
-              </a>
-              <a href="#bibtex" class="external-link button is-dark">
-                <span class="icon">BibTeX</span>
-              </a>
-            </div>
-          </div>
+        <div class="publication-links">
+          <a href="https://arxiv.org/abs/2605.20044" class="button is-dark">arXiv</a>
+          <a href="#" class="button is-dark is-disabled" aria-disabled="true">Code (coming soon)</a>
+          <a href="#bibtex" class="button is-dark">BibTeX</a>
         </div>
       </div>
     </div>
   </section>
+
 
   <section class="hero teaser">
     <div class="container is-max-desktop">
-      <div class="hero-body">
-        <img id="teaser" src="static/images/all_masks_image.jpg" alt="Label contamination in hard mask lifting for 3D Gaussian Splatting.">
-        <h2 class="subtitle has-text-centered">
-          OP2GS decouples visual opacity from instance occupancy, suppressing mislabeled floater Gaussians while preserving photorealistic rendering.
-        </h2>
+      <div class="triptych-head" aria-hidden="true">
+        <span>RGB (appearance opacity σ)</span>
+        <span>Instance opacity σ*
+          <span class="colorbar"><span>0</span><i></i><span>1</span></span></span>
+        <span>Instances</span>
+      </div>
+      <div class="teaser-stack">
+        <img src="static/gifs/scannetpp_5f99900f09_sigma.gif" alt="ScanNet++ lounge: RGB rendering, instance opacity of every Gaussian, and OP2GS instances along the capture path.">
+        <img src="static/gifs/scannetpp_21d970d8de_sigma.gif" alt="ScanNet++ classroom: RGB rendering, instance opacity of every Gaussian, and OP2GS instances along the capture path.">
+      </div>
+      <p class="teaser-caption">Two ScanNet++ scenes along the capture path. Each Gaussian keeps its appearance opacity σ for the image and learns a separate instance opacity σ* (middle, rendered with the geometry of the image). Large surfaces get σ* close to 1, while object boundaries and thin structures get low σ*, so they do not leak into the instance masks (right).</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered">Abstract</h2>
+      <div class="content prose abstract">
+        <p>3D Gaussian Splatting (3DGS) provides an explicit and efficient scene representation, but its primitives do not naturally expose object-level identity. Existing methods either learn contrastive per-Gaussian features that need post-hoc clustering, or supervise identity encodings with view-consistent 2D masks.</p>
+        <p>We propose <span class="method-name">OP2GS</span>, a lightweight object-aware Gaussian representation that augments each primitive with an explicit instance label and a dedicated instance opacity σ*, which serves as an instance occupancy field for object-mask rendering. This dual-opacity formulation decouples visual appearance from instance occupancy, so that σ* can be learned and the instance labels can be corrected without touching the appearance parameters σ and c. We learn σ* with an instance occupancy loss that follows the standard transmittance-based visibility of 3DGS. A discrete regrouping step then corrects the instance labels using multi-view mask consensus.</p>
+        <p>Since no high-dimensional features are required, OP2GS can be plugged into existing 3DGS training pipelines and applied unchanged to frozen 3DGS assets. On the ScanNet++ validation set with the official class-agnostic protocol, OP2GS improves over OpenSplat3D, the strongest comparable baseline, with both SAM and EntitySeg masks; it is also best on Messy Rooms and, under the Gaga protocol, on Replica, while storing only one scalar and one integer per Gaussian.</p>
       </div>
     </div>
   </section>
 
   <section class="section">
     <div class="container is-max-desktop">
-      <div class="columns is-centered has-text-centered">
-        <div class="column is-four-fifths">
-          <h2 class="title is-3">Abstract</h2>
-          <div class="content has-text-justified">
-            <p>
-              3D Gaussian Splatting provides an explicit and efficient scene representation, but its primitives lack inherent object-level identity. Existing open-vocabulary methods either distill high-dimensional features into Gaussians or lift 2D mask labels into 3D, which can be expensive or vulnerable to label contamination.
-            </p>
-            <p>
-              We propose <span class="method-name">OP2GS</span>, an object-aware Gaussian representation that augments each primitive with an explicit instance identity and a dedicated instance opacity, <span class="math">sigma*</span>, for object-mask rendering. The original opacity remains responsible for visual reconstruction, while <span class="math">sigma*</span> models whether a Gaussian should contribute to a particular object mask.
-            </p>
-            <p>
-              This dual-opacity formulation decouples visual existence from instance occupancy: mislabeled Gaussians can remain available for image rendering while becoming transparent in the object-mask branch. Object-level CLIP descriptors are then aggregated from multi-view rendered masks, avoiding per-Gaussian feature storage.
-            </p>
-          </div>
-        </div>
-      </div>
+      <h2 class="title is-3 has-text-centered">Method</h2>
+      <figure class="figure">
+        <img src="static/images/pipeline.jpg" alt="OP2GS pipeline: association, instance occupancy loss, regrouping and refinement.">
+        <figcaption><b>Overview of OP2GS.</b> Each Gaussian carries an integer instance label l and an instance opacity σ* in addition to the usual 3DGS parameters. Gradients never touch the appearance opacity σ or the colors, so the same pipeline also runs on a frozen 3DGS asset.</figcaption>
+      </figure>
+      <ol class="steps">
+        <li><h3>Association</h3><p>A training-free association turns per-view SAM masks into view-consistent ids by multi-view co-visibility consensus, and lifts them into initial, noisy labels.</p></li>
+        <li><h3>Occupancy learning</h3><p>The instance occupancy loss trains σ* by matching the rendered object mask to the 2D mask, using the same transmittance as the image.</p></li>
+        <li><h3>Regrouping</h3><p>Region growing on superpoints and graph partitioning with GAEC correct the labels, with a label term weighted by σ*.</p></li>
+        <li><h3>Refinement</h3><p>A final round refines σ* with many-to-one targets and optionally prunes Gaussians that no object claims.</p></li>
+      </ol>
     </div>
   </section>
 
-  <section class="section">
+  <section class="section is-light-section" id="demo">
     <div class="container is-max-desktop">
-      <div class="columns is-centered">
-        <div class="column is-full-width">
-          <h2 class="title is-3 has-text-centered">Method Overview</h2>
-          <div class="publication-image">
-            <img src="static/images/pipeline.jpg" alt="OP2GS pipeline.">
-          </div>
-          <div class="content has-text-justified">
-            <p>
-              OP2GS first trains standard 3DGS, initializes scalar object labels from SAM2 masks with multi-view voting, then learns an additional instance opacity using a visibility-aware random object loss. After training, each object receives an aggregated open-vocabulary descriptor from masked multi-view crops.
-            </p>
-          </div>
+      <h2 class="title is-3 has-text-centered">Interactive results</h2>
+      <p class="section-lead">These are trained OP2GS models, rendered in your browser. Every Gaussian keeps its appearance (σ, color) and adds one instance label and one instance opacity σ*. Switch to <b>Instances</b> to render the labels with σ* instead of σ, move the threshold to see which Gaussians the readout keeps, and click an object to extract it.</p>
 
-          <div class="method-grid">
-            <div class="method-card">
-              <h3>1. Standard 3DGS</h3>
-              <p>Preserve the original opacity for appearance reconstruction.</p>
-            </div>
-            <div class="method-card">
-              <h3>2. Label Initialization</h3>
-              <p>Lift SAM2 instance masks to Gaussians using multi-view voting.</p>
-            </div>
-            <div class="method-card">
-              <h3>3. Random Object Loss</h3>
-              <p>Optimize object-specific instance opacity under 3DGS transmittance.</p>
-            </div>
-            <div class="method-card">
-              <h3>4. OV Segmentation</h3>
-              <p>Aggregate object-level CLIP features instead of per-Gaussian features.</p>
-            </div>
+      <div class="viewer" id="viewer">
+        <div class="viewer-toolbar">
+          <div class="control-group" role="group" aria-label="Scene">
+            <span class="control-label">Scene</span>
+            <button type="button" data-scene="static/scenes/old_room_100.bin">Old room</button>
+            <button type="button" data-scene="static/scenes/large_corridor_100.bin">Large corridor</button>
           </div>
+          <div class="control-group" role="group" aria-label="Rendering">
+            <span class="control-label">Render</span>
+            <button type="button" data-mode="rgb">Appearance (σ)</button>
+            <button type="button" data-mode="inst">Instances (σ*)</button>
+          </div>
+          <div class="control-group control-slider">
+            <label class="control-label" for="tau">Readout σ* &gt;</label>
+            <input type="range" id="tau" min="0" max="0.9" step="0.01" value="0.1">
+            <output id="tau-value" for="tau">0.10</output>
+          </div>
+          <button type="button" class="control-plain" data-nextview>Next training view</button>
         </div>
+        <div class="viewer-stage">
+          <canvas aria-label="3D Gaussian scene; drag to rotate, right-drag or shift-drag to pan, scroll to zoom, click an object to isolate it"></canvas>
+          <div class="viewer-overlay" data-overlay>Loading scene…</div>
+          <p class="viewer-hint">Drag: rotate · Right-drag or Shift-drag: pan · Scroll or pinch: zoom · Click: isolate object · Esc: show all</p>
+        </div>
+        <p class="viewer-status" data-status aria-live="polite"></p>
       </div>
+      <p class="note">Scenes from Messy Rooms with 100 objects each, SAM masks; 9–11 MB per scene. The threshold applies in the Instances view and to an isolated object; the paper reads out instances with σ* &gt; 0.1. Colors come from the zero-order spherical harmonics only.</p>
     </div>
   </section>
 
-  <section class="section is-light-section">
+
+  <section class="section" id="results">
     <div class="container is-max-desktop">
-      <h2 class="title is-3 has-text-centered">Dual Opacity</h2>
-      <div class="columns is-centered">
-        <div class="column">
-          <div class="result-card">
-            <img src="static/images/op2_render.jpg" alt="Dual opacity rendering.">
-            <div class="result-card-content">
-              <h3>Object-Specific Opacity Rendering</h3>
-              <p>The RGB branch keeps the original opacity, while the mask branch renders with the learned instance opacity.</p>
-            </div>
-          </div>
-        </div>
-        <div class="column">
-          <div class="result-card">
-            <img src="static/images/render_loss.jpg" alt="Random object loss.">
-            <div class="result-card-content">
-              <h3>Visibility-Aware Instance Learning</h3>
-              <p>Random object loss suppresses mislabeled Gaussians without removing them from appearance reconstruction.</p>
-            </div>
-          </div>
-        </div>
+      <h2 class="title is-3 has-text-centered">Visualization</h2>
+
+      <p class="sub-lead">A camera orbit around each reconstructed scene (Messy Rooms, Replica) or a path along the captured views (ScanNet++). In each animation, the left half is the RGB rendering with the appearance opacity σ, and the right half shows the instances of OP2GS, rendered with the instance opacity σ*.</p>
+      <div class="gif-row">
+        <figure class="gif" style="--ar: 2.022"><img src="static/gifs/messy_large_corridor_100.gif" alt="Orbit around the Messy Rooms large corridor with 100 objects: RGB rendering and OP2GS instances." loading="lazy"><figcaption>Messy Rooms, large corridor with 100 objects</figcaption></figure>
+        <figure class="gif" style="--ar: 2.696"><img src="static/gifs/replica_office_0.gif" alt="Orbit around Replica office_0: RGB rendering and OP2GS instances." loading="lazy"><figcaption>Replica, office_0</figcaption></figure>
       </div>
+      <div class="gif-row">
+        <figure class="gif" style="--ar: 3.033"><img src="static/gifs/scannetpp_1ada7a0617.gif" alt="ScanNet++ office along the capture path: RGB rendering and OP2GS instances." loading="lazy"><figcaption>ScanNet++, 1ada7a0617</figcaption></figure>
+        <figure class="gif" style="--ar: 3.033"><img src="static/gifs/scannetpp_3f15a9266d.gif" alt="ScanNet++ office along the capture path: RGB rendering and OP2GS instances." loading="lazy"><figcaption>ScanNet++, 3f15a9266d</figcaption></figure>
+      </div>
+
+      <h3 class="subhead">Open-vocabulary queries on ScanNet</h3>
+      <p class="sub-lead">OP2GS stores no language features. Each instance is rendered as a 2D mask in its best views and classified with MasQCLIP. Red marks the mesh vertices assigned to the queried class (middle) and the ground-truth vertices of that class (right), with the per-scene class IoU above.</p>
+      <figure class="figure figure-narrow">
+        <img src="static/images/scannet_ov.jpg" alt="Open-vocabulary class queries on ScanNet scenes: input, OP2GS prediction and ground truth." loading="lazy">
+      </figure>
     </div>
   </section>
-
-  <section class="section">
-    <div class="container is-max-desktop">
-      <h2 class="title is-3 has-text-centered">Results</h2>
-      <div class="columns is-centered">
-        <div class="column">
-          <div class="result-card">
-            <img src="static/images/ovseg.jpg" alt="Open-vocabulary segmentation examples.">
-            <div class="result-card-content">
-              <h3>Open-Vocabulary 3D Segmentation</h3>
-              <p>OP2GS produces clean text-query masks on LERF-Mask while avoiding high-dimensional feature rendering.</p>
-            </div>
-          </div>
-        </div>
-        <div class="column">
-          <div class="result-card">
-            <img src="static/images/all_masks_image.jpg" alt="Instance segmentation comparison.">
-            <div class="result-card-content">
-              <h3>Cleaner Instance Masks</h3>
-              <p>Compared with majority-vote lifting, learned instance opacity reduces floater noise and boundary artifacts.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="metrics-grid">
-        <div class="metric-box">
-          <strong>97.1%</strong>
-          <span>mIoU on 3DOVS</span>
-        </div>
-        <div class="metric-box">
-          <strong>92.3%</strong>
-          <span>mIoU on LERF-Mask figurines</span>
-        </div>
-        <div class="metric-box">
-          <strong>121.7 FPS</strong>
-          <span>Inference speed</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- <section class="section is-light-section">
-    <div class="container is-max-desktop">
-      <h2 class="title is-3 has-text-centered">What To Add For A Strong Project Page</h2>
-      <div class="content">
-        <ul class="asset-list">
-          <li><strong>Teaser video:</strong> A 10-20 second side-by-side RGB and text-query mask video across novel views.</li>
-          <li><strong>Interactive query examples:</strong> Buttons for several queries such as chair, glass of water, ramen bowl, and desk.</li>
-          <li><strong>Before/after animation:</strong> Majority-vote lifting versus OP2GS, focused on floater and boundary suppression.</li>
-          <li><strong>Efficiency figure:</strong> A small bar chart comparing feature dimension and FPS against Gaussian Grouping and ObjectGS.</li>
-          <li><strong>Concept figure:</strong> One clean graphic showing the same Gaussian carrying appearance opacity and instance opacity.</li>
-        </ul>
-      </div>
-    </div>
-  </section> -->
 
   <section class="section" id="bibtex">
-    <div class="container is-max-desktop content">
+    <div class="container is-max-desktop">
       <h2 class="title is-3">BibTeX</h2>
       <pre><code>@article{liu2026op2gs,
-  title   = {OP2GS: Object-Aware 3D Gaussian Primitives via Dual Opacity},
-  author  = {Liu, Guiyu and Vaara, Niklas and Mustaniemi, Janne and Kannala, Juho and Heikkila, Janne},
-  journal = {arXiv preprint},
+  title   = {OP2GS: Feature-Free Gaussian Splatting with Dual Opacity for 3D Instance Segmentation},
+  author  = {Liu, Guiyu and Vaara, Niklas and Mustaniemi, Janne and Kannala, Juho and Heikkil{\"a}, Janne},
+  journal = {arXiv preprint arXiv:2605.20044},
   year    = {2026}
 }</code></pre>
     </div>
   </section>
 
   <footer class="footer">
-    <div class="container">
-      <div class="content has-text-centered">
-        <p>This page follows the common Nerfies-style academic project page structure. Replace the arXiv and code placeholders once public URLs are ready.</p>
-      </div>
+    <div class="container has-text-centered">
+      <p>University of Oulu · Aalto University</p>
     </div>
   </footer>
 </body>
