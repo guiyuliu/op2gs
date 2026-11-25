@@ -132,7 +132,7 @@ onmessage = (e) => {
       this.status = root.querySelector("[data-status]");
       this.overlay = root.querySelector("[data-overlay]");
       this.mode = "rgb"; this.tau = 0.1; this.iso = 0; this.scene = null;
-      this.dirtySort = true; this.sorting = false; this.sortId = 0; this.count = 0;
+      this.dirtySort = true; this.needsDraw = true; this.sorting = false; this.sortId = 0; this.count = 0; this.needsDraw = true;
       const gl = this.canvas.getContext("webgl2", { antialias: false, premultipliedAlpha: true });
       if (!gl) { this.fail("This browser does not support WebGL 2, which the viewer needs."); return; }
       this.gl = gl;
@@ -158,7 +158,7 @@ onmessage = (e) => {
       this.worker = new Worker(URL.createObjectURL(new Blob([WORKER], { type: "text/javascript" })));
       this.worker.onmessage = (e) => this.onSorted(e.data);
       this.bindInput();
-      new ResizeObserver(() => { this.resize(); this.dirtySort = true; }).observe(this.canvas);
+      new ResizeObserver(() => { this.resize(); this.dirtySort = true; this.needsDraw = true; }).observe(this.canvas);
       const loop = () => { this.frame(); requestAnimationFrame(loop); };
       requestAnimationFrame(loop);
     }
@@ -229,7 +229,7 @@ onmessage = (e) => {
       const gl = this.gl; gl.bindTexture(gl.TEXTURE_2D, this.tex);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32UI, this.texW, this.texH, 0, gl.RGBA_INTEGER, gl.UNSIGNED_INT, td);
       this.worker.postMessage({ vis: vis.slice() });
-      this.dirtySort = true;
+      this.dirtySort = true; this.needsDraw = true;
       this.updateStatus(shown);
     }
 
@@ -247,7 +247,7 @@ onmessage = (e) => {
       this.R = c.rotation.map((r) => r.slice()); this.cpos = c.position.slice(); this.camFy = c.fy / c.height;
       const f = this.col(2), d = Math.max(dot([h.center[0] - this.cpos[0], h.center[1] - this.cpos[1], h.center[2] - this.cpos[2]], f), 0.5);
       this.target = this.cpos.map((p, i) => p + f[i] * d);
-      this.up = h.up; this.dirtySort = true;
+      this.up = h.up; this.dirtySort = true; this.needsDraw = true;
     }
     col(j) { return [this.R[0][j], this.R[1][j], this.R[2][j]]; }
     setCol(j, v) { for (let i = 0; i < 3; i++) this.R[i][j] = v[i]; }
@@ -261,8 +261,8 @@ onmessage = (e) => {
     }
 
     resize() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2), w = Math.round(this.canvas.clientWidth * dpr), h = Math.round(this.canvas.clientHeight * dpr);
-      if (this.canvas.width !== w || this.canvas.height !== h) { this.canvas.width = w; this.canvas.height = h; }
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5), w = Math.round(this.canvas.clientWidth * dpr), h = Math.round(this.canvas.clientHeight * dpr);
+      if (this.canvas.width !== w || this.canvas.height !== h) { this.canvas.width = w; this.canvas.height = h; this.needsDraw = true; }
     }
 
     frame() {
@@ -274,6 +274,8 @@ onmessage = (e) => {
         this.sorting = true; this.dirtySort = false;
         this.worker.postMessage({ view: this.view, id: ++this.sortId });
       }
+      if (!this.needsDraw) return;     // draw only when something changed, so an idle viewer costs no GPU time
+      this.needsDraw = false;
       gl.viewport(0, 0, W, H); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
       if (!this.count) return;
       gl.uniformMatrix4fv(this.u.projection, false, new Float32Array([2 * f / W, 0, 0, 0, 0, -2 * f / H, 0, 0, 0, 0, zf / (zf - zn), 1, 0, 0, -(zf * zn) / (zf - zn), 0]));
@@ -286,7 +288,7 @@ onmessage = (e) => {
     onSorted(d) {
       this.sorting = false;
       const gl = this.gl; gl.bindBuffer(gl.ARRAY_BUFFER, this.idxBuf);
-      gl.bufferData(gl.ARRAY_BUFFER, d.order, gl.DYNAMIC_DRAW); this.count = d.order.length;
+      gl.bufferData(gl.ARRAY_BUFFER, d.order, gl.DYNAMIC_DRAW); this.count = d.order.length; this.needsDraw = true;
     }
 
     // ---------- camera controls ----------
@@ -302,17 +304,17 @@ onmessage = (e) => {
       rotAll(norm(this.col(0)), dy * 0.005);
       if (Math.abs(dot(this.col(2), this.up)) > 0.98) { this.R = saveR; for (let i = 0; i < 3; i++) rel[i] = saveRel[i]; }
       void before;
-      this.cpos = tg.map((t, i) => t + rel[i]); this.dirtySort = true;
+      this.cpos = tg.map((t, i) => t + rel[i]); this.dirtySort = true; this.needsDraw = true;
     }
     pan(dx, dy) {
       const dist = Math.hypot(...this.cpos.map((p, i) => p - this.target[i])), k = dist / (this.camFy * this.canvas.clientHeight);
       const x = this.col(0), y = this.col(1);
       for (let i = 0; i < 3; i++) { const m = -k * (dx * x[i] + dy * y[i]); this.cpos[i] += m; this.target[i] += m; }
-      this.dirtySort = true;
+      this.dirtySort = true; this.needsDraw = true;
     }
     zoom(factor) {
       const f = this.col(2), dist = Math.max(Math.hypot(...this.cpos.map((p, i) => p - this.target[i])) * factor, 0.05);
-      this.cpos = this.target.map((t, i) => t - f[i] * dist); this.dirtySort = true;
+      this.cpos = this.target.map((t, i) => t - f[i] * dist); this.dirtySort = true; this.needsDraw = true;
     }
 
     pick(cx, cy) {
