@@ -92,11 +92,7 @@
 
       <div class="viewer" id="viewer">
         <div class="viewer-toolbar">
-          <div class="control-group" role="group" aria-label="Scene">
-            <span class="control-label">Scene</span>
-            <button type="button" data-scene="static/scenes/old_room_100.bin">Old room</button>
-            <button type="button" data-scene="static/scenes/large_corridor_100.bin">Large corridor</button>
-          </div>
+          <button type="button" data-scene="static/scenes/old_room_100.bin" hidden>Old room</button>
           <div class="control-group" role="group" aria-label="Rendering">
             <span class="control-label">Render</span>
             <button type="button" data-mode="rgb">Appearance (σ)</button>
@@ -116,7 +112,7 @@
         </div>
         <p class="viewer-status" data-status aria-live="polite"></p>
       </div>
-      <p class="note">Scenes from Messy Rooms with 100 objects each, SAM masks; 9–11 MB per scene. The threshold applies in the Instances view and to an isolated object; the paper reads out instances with σ* &gt; 0.1. Colors come from the zero-order spherical harmonics only.</p>
+      <p class="note">Messy Rooms old room with 100 objects, SAM masks; 9 MB. The threshold applies in the Instances view and to an isolated object; the paper reads out instances with σ* &gt; 0.1. Colors come from the zero-order spherical harmonics only.</p>
     </div>
   </section>
 
