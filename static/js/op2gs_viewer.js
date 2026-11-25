@@ -35,8 +35,11 @@ void main() {
   vec2 ax1 = min(sqrt(l1), 1024.0) * d;
   vec2 ax2 = min(sqrt(l2), 1024.0) * vec2(d.y, -d.x);
   vColor = vec4(cv.w & 0xffu, (cv.w >> 8) & 0xffu, (cv.w >> 16) & 0xffu, (cv.w >> 24) & 0xffu) / 255.0;
-  vPos = position;
-  gl_Position = vec4(p2.xy / p2.w + (position.x * ax1 + position.y * ax2) * 2.0 / viewport, 0.0, 1.0);
+  float rmax = sqrt(max(0.0, 2.0 * log(255.0 * min(vColor.a, 0.99))));
+  if (rmax <= 0.0) { gl_Position = vec4(0.0, 0.0, 2.0, 1.0); return; }
+  vec2 q = position * (min(rmax, 3.0) / 3.0);
+  vPos = q;
+  gl_Position = vec4(p2.xy / p2.w + (q.x * ax1 + q.y * ax2) * 2.0 / viewport, 0.0, 1.0);
 }`;
 
   const FS = `#version 300 es
@@ -261,7 +264,7 @@ onmessage = (e) => {
     }
 
     resize() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5), w = Math.round(this.canvas.clientWidth * dpr), h = Math.round(this.canvas.clientHeight * dpr);
+      const dpr = this.moving ? 0.6 : Math.min(window.devicePixelRatio || 1, 1.5), w = Math.round(this.canvas.clientWidth * dpr), h = Math.round(this.canvas.clientHeight * dpr);
       if (this.canvas.width !== w || this.canvas.height !== h) { this.canvas.width = w; this.canvas.height = h; this.needsDraw = true; }
     }
 
@@ -292,7 +295,14 @@ onmessage = (e) => {
     }
 
     // ---------- camera controls ----------
+    // while the camera moves, render at reduced resolution; restore full resolution 200 ms after the last move
+    poke() {
+      this.moving = true; clearTimeout(this.moveTimer);
+      this.moveTimer = setTimeout(() => { this.moving = false; this.needsDraw = true; }, 200);
+    }
+
     orbit(dx, dy) {
+      this.poke();
       const tg = this.target, rel = this.cpos.map((p, i) => p - tg[i]);
       const rotAll = (axis, ang) => {
         const r2 = rotate(rel, axis, ang); for (let i = 0; i < 3; i++) rel[i] = r2[i];
@@ -307,12 +317,14 @@ onmessage = (e) => {
       this.cpos = tg.map((t, i) => t + rel[i]); this.dirtySort = true; this.needsDraw = true;
     }
     pan(dx, dy) {
+      this.poke();
       const dist = Math.hypot(...this.cpos.map((p, i) => p - this.target[i])), k = dist / (this.camFy * this.canvas.clientHeight);
       const x = this.col(0), y = this.col(1);
       for (let i = 0; i < 3; i++) { const m = -k * (dx * x[i] + dy * y[i]); this.cpos[i] += m; this.target[i] += m; }
       this.dirtySort = true; this.needsDraw = true;
     }
     zoom(factor) {
+      this.poke();
       const f = this.col(2), dist = Math.max(Math.hypot(...this.cpos.map((p, i) => p - this.target[i])) * factor, 0.05);
       this.cpos = this.target.map((t, i) => t - f[i] * dist); this.dirtySort = true; this.needsDraw = true;
     }
@@ -370,7 +382,11 @@ onmessage = (e) => {
     sceneBtns.forEach((b) => (b.onclick = () => { press(sceneBtns, b); v.load(b.dataset.scene); }));
     modeBtns.forEach((b) => (b.onclick = () => { press(modeBtns, b); v.mode = b.dataset.mode; v.refresh(); }));
     const tau = root.querySelector("#tau"), tauOut = root.querySelector("#tau-value");
-    tau.oninput = () => { v.tau = +tau.value; tauOut.textContent = (+tau.value).toFixed(2); v.refresh(); };
+    let tauPending = false;
+    tau.oninput = () => {
+      v.tau = +tau.value; tauOut.textContent = (+tau.value).toFixed(2);
+      if (!tauPending) { tauPending = true; requestAnimationFrame(() => { tauPending = false; v.refresh(); }); }
+    };
     root.querySelector("[data-nextview]").onclick = () => { if (v.scene) { v.camIdx = (v.camIdx + 1) % v.scene.head.cameras.length; v.setCamera(v.camIdx); } };
     press(sceneBtns, sceneBtns[0]); press(modeBtns, modeBtns.find((b) => b.dataset.mode === v.mode));
     v.overlay.textContent = "The scene loads when you scroll here.";
