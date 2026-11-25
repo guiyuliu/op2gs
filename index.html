@@ -131,11 +131,12 @@
         <figure class="gif" style="--ar: 3.033"><img src="static/gifs/scannetpp_3f15a9266d.gif" alt="ScanNet++ office along the capture path: RGB rendering and OP2GS instances." loading="lazy"><figcaption>ScanNet++, 3f15a9266d</figcaption></figure>
       </div>
 
-      <h3 class="subhead">Open-vocabulary queries on ScanNet</h3>
-      <p class="sub-lead">OP2GS stores no language features. Each instance is rendered as a 2D mask in its best views and classified with MasQCLIP. Red marks the mesh vertices assigned to the queried class (middle) and the ground-truth vertices of that class (right), with the per-scene class IoU above.</p>
-      <figure class="figure figure-narrow">
-        <img src="static/images/scannet_ov.jpg" alt="Open-vocabulary class queries on ScanNet scenes: input, OP2GS prediction and ground truth." loading="lazy">
-      </figure>
+      <h3 class="subhead">Open-vocabulary queries on ScanNet++</h3>
+      <p class="sub-lead">OP2GS stores no language features. Each instance is rendered as a 2D mask in its best views and classified with MasQCLIP, so a text query selects whole instances. Red marks the mesh vertices assigned to the queried class; the IoU with the ground truth of that class is shown on the right. "Fan" is not one of the benchmark classes and is added to the vocabulary only for this query.</p>
+      <div class="gif-row">
+        <figure class="gif" style="--ar: 1"><img src="static/gifs/ov_scannetpp_7b6477cb95.gif" alt="Text queries monitor, table, keyboard, trash can and fan on a ScanNet++ office; the selected points turn red." loading="lazy"><figcaption>ScanNet++, 7b6477cb95</figcaption></figure>
+        <figure class="gif" style="--ar: 1"><img src="static/gifs/ov_scannetpp_09c1414f1b.gif" alt="Text queries suitcase, plant, tv and blanket on a ScanNet++ living room; the selected points turn red." loading="lazy"><figcaption>ScanNet++, 09c1414f1b</figcaption></figure>
+      </div>
     </div>
   </section>
 
